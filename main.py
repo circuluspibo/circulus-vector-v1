@@ -70,7 +70,7 @@ def language(input : str):
 
 @app.get("/v1/search", summary="url로 부터 입력")
 def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
-  vecs = Chroma(persist_directory=f"./{userId}_{projectId}", embedding_function=embeddings)
+  vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
   docs = vecs.similarity_search_with_relevance_scores(prompt, k=3) # , score_threshold=0.5
   print(docs)
   return { "result" : True, "data" : docs }
@@ -113,7 +113,7 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
   documents = loader.load_and_split()
   chunks = text_splitter.split_documents(documents)
 
-  vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./{userId}_{projectId}")
+  vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./db/{userId}_{projectId}")
 
   return { "result" : True, "data" : len(documents)}
 
@@ -134,7 +134,7 @@ def fromUrl(url="", userId="test", projectId="test"): #max=20480): # gen or med
 
   documents = loader.load_and_split()
   chunks = text_splitter.split_documents(documents)
-  vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./{userId}_{projectId}")
+  vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./db/{userId}_{projectId}")
 
   return { "result" : True, "data" : len(documents)}
 
