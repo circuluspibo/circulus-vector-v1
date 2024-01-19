@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pyhwp
+pypdf
+six
+lxml
+sentence-transformers
+transformers
+python-multipart
+beautifulsoup4
+chromadb
+unstructured
+python-pptx
+docx2txt
+pandas
+openpyxl

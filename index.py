@@ -8,4 +8,4 @@ if __name__ == '__main__':
     #print(CONF)
 
     print("CIRCULUS_ENV: " + ENV)        
-    uvicorn.run("main:app","0.0.0.0",59021,reload=False)
+    uvicorn.run("main:app",host="0.0.0.0",port=59021,reload=False)
