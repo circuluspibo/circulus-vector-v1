@@ -21,9 +21,11 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.document_loaders import Docx2txtLoader
 from langchain_community.document_loaders import UnstructuredPowerPointLoader
 from langchain_community.document_loaders import UnstructuredFileLoader
-from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import UnstructuredXMLLoader
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_community.document_loaders import WikipediaLoader
+from langchain_community.vectorstores import Chroma
+import zipfile
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
 
@@ -68,12 +70,23 @@ def monitor():
 def language(input : str):
   return { "result" : True, "data" : input }
 
-@app.get("/v1/search", summary="url로 부터 입력")
+@app.get("/v1/test", summary="입력된 데이터 조회")
 def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
   vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
   docs = vecs.similarity_search_with_relevance_scores(prompt, k=3) # , score_threshold=0.5
   print(docs)
   return { "result" : True, "data" : docs }
+
+@app.get("/v1/query", summary="언어모델과 연동 테스트")
+def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
+  vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
+  docs = vecs.similarity_search_with_relevance_scores(prompt, k=2) # , score_threshold=0.5
+  data = ''
+
+  for doc in docs:
+    data = data + doc[0].page_content + "\n"
+
+  return { "result" : True, "data" : data }
 
 @app.post("/v1/fromFile", summary="파일로 부터 입력")
 def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
@@ -96,11 +109,15 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
   elif type == "ppt" or type == "pptx":
     type = "ppt" 
     loader = UnstructuredPowerPointLoader(temp_file)  
-  elif type == "hwp" or type == "hwpx":
-    type = "hwp" 
+  elif type == "hwp": # or type == "hwpx
     print(f"hwp5html --output ./hwp {temp_file}")
     os.system(f'hwp5html --html --output ./hwp/index.html "{temp_file}"')
     loader = BSHTMLLoader("./hwp/index.html",open_encoding='UTF8')
+  elif type == "hwpx": # 압축 파일
+    type = "hwp"
+    with zipfile.ZipFile(temp_file, 'r') as zip_ref:
+      zip_ref.extractall("./zip")
+    loader = UnstructuredXMLLoader('./zip/Contents/section0.xml')
   elif type == "xls" or type == "xlsx":
     type = "xls"
     loader = UnstructuredExcelLoader(temp_file, mode="elements")
@@ -118,14 +135,14 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
   return { "result" : True, "data" : len(documents)}
 
 @app.get("/v1/fromUrl", summary="url로 부터 입력")
-def fromUrl(url="", userId="test", projectId="test"): #max=20480): # gen or med
+def fromUrl(url="", userId="test", projectId="test", lang='ko'): #max=20480): # gen or med
 
   temp_file = ""
   type = 'web'
 
   if url in "youtube":
     type = "youtube"
-    loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
+    loader = YoutubeLoader.from_youtube_url(url, add_video_info=False, language=[lang, "id"], translation=lang)
   elif url in "wikipedia":
     type = "wikipedia"
     loader = WikipediaLoader(query="HUNTER X HUNTER", load_max_docs=2)
