@@ -32,7 +32,7 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=12
 
 embeddings = HuggingFaceEmbeddings(
     model_name="BAAI/bge-m3", # "BAAI/bge-large-en-v1.5", # distiluse-base-multilingual-cased-v1
-    #model_kwargs={"device": "cuda"},
+    model_kwargs={"device": "cuda"},
     encode_kwargs={"normalize_embeddings": True},
 )
 
@@ -107,6 +107,9 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
 
   temp_file = './uploads/' + file.filename
 
+
+  print("preparing", temp_file)
+
   if type == 'pdf':
     loader = PyPDFLoader(temp_file)
   elif type == "doc" or type == "docx":
@@ -136,8 +139,14 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
     type = "txt"
     loader = UnstructuredFileLoader(temp_file)
 
+  print("loading", temp_file)
+
   documents = loader.load_and_split()
+  print("splitting", temp_file)
   chunks = text_splitter.split_documents(documents)
+
+  print("saving...", temp_file)
+
 
   vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./db/{userId}_{projectId}")
 
@@ -149,6 +158,8 @@ def fromUrl(url="", userId="test", projectId="test", lang='ko'): #max=20480): # 
   temp_file = ""
   type = 'web'
 
+  print("preparing...")
+
   if url in "youtube":
     type = "youtube"
     loader = YoutubeLoader.from_youtube_url(url, add_video_info=False, language=[lang, "id"], translation=lang)
@@ -158,8 +169,14 @@ def fromUrl(url="", userId="test", projectId="test", lang='ko'): #max=20480): # 
   else: # 일반 웹으로 간주
     loader = WebBaseLoader(url)
 
+  print("loading...")
   documents = loader.load_and_split()
+
+  print("splitting...")
   chunks = text_splitter.split_documents(documents)
+
+  print("saving...")
+
   vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./db/{userId}_{projectId}")
 
   return { "result" : True, "data" : len(documents)}
