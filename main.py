@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 #from ftlangdetect import detect
 from serverinfo import si
-from transformers import AutoTokenizer
 from fastapi.responses import StreamingResponse
 from transformers import AutoTokenizer,BartForConditionalGeneration
 from huggingface_hub import hf_hub_download
@@ -26,11 +25,13 @@ from langchain_community.document_loaders import YoutubeLoader
 from langchain_community.document_loaders import WikipediaLoader
 from langchain_community.vectorstores import Chroma
 import zipfile
+import requests
+import json 
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
 
 embeddings = HuggingFaceEmbeddings(
-    model_name="distiluse-base-multilingual-cased-v1", # "BAAI/bge-large-en-v1.5",
+    model_name="BAAI/bge-m3", # "BAAI/bge-large-en-v1.5", # distiluse-base-multilingual-cased-v1
     #model_kwargs={"device": "cuda"},
     encode_kwargs={"normalize_embeddings": True},
 )
@@ -70,7 +71,7 @@ def monitor():
 def language(input : str):
   return { "result" : True, "data" : input }
 
-@app.get("/v1/test", summary="입력된 데이터 조회")
+@app.get("/v1/find", summary="입력된 데이터 조회")
 def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
   vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
   docs = vecs.similarity_search_with_relevance_scores(prompt, k=3) # , score_threshold=0.5
@@ -78,7 +79,7 @@ def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or me
   return { "result" : True, "data" : docs }
 
 @app.get("/v1/query", summary="언어모델과 연동 테스트")
-def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
+def search(prompt="", userId="test", projectId="test", type="매우 친절한 인공지능으로 모르면 모른다고 하고 아는건 최대한 자세히 말해주세요."): #max=20480): # gen or med
   vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
   docs = vecs.similarity_search_with_relevance_scores(prompt, k=2) # , score_threshold=0.5
   data = ''
@@ -86,7 +87,15 @@ def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or me
   for doc in docs:
     data = data + doc[0].page_content + "\n"
 
-  return { "result" : True, "data" : data }
+  data = data.replace('\n', ' ').replace('\r', '')
+
+  print(data)
+
+  res = requests.post('https://oe-napi.circul.us/v1/rag2chat', json={ "prompt" : prompt, "type" : type, "history" : [], "rag" : data })
+
+  print(res.text)
+ 
+  return { "result" : True, "data" : res.text }
 
 @app.post("/v1/fromFile", summary="파일로 부터 입력")
 def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
