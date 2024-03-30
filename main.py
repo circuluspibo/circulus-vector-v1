@@ -27,12 +27,13 @@ from langchain_community.vectorstores import Chroma
 import zipfile
 import requests
 import json 
+from urllib import parse
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
+text_splitter = RecursiveCharacterTextSplitter(separators="\n", chunk_size=1024, chunk_overlap=128)
 
 embeddings = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-m3", # "BAAI/bge-large-en-v1.5", # distiluse-base-multilingual-cased-v1
-    model_kwargs={"device": "cuda"},
+    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", #"BAAI/bge-large-en-v1.5", #"BAAI/bge-m3", # # distiluse-base-multilingual-cased-v1
+    #model_kwargs={"device": "cuda"}, # sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
     encode_kwargs={"normalize_embeddings": True},
 )
 
@@ -73,6 +74,7 @@ def language(input : str):
 
 @app.get("/v1/find", summary="입력된 데이터 조회")
 def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or med
+  print(prompt)
   vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
   docs = vecs.similarity_search_with_relevance_scores(prompt, k=3) # , score_threshold=0.5
   print(docs)
@@ -154,31 +156,42 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
 
 @app.get("/v1/fromUrl", summary="url로 부터 입력")
 def fromUrl(url="", userId="test", projectId="test", lang='ko'): #max=20480): # gen or med
-
+  if os.path.exists(f"./db/{userId}_{projectId}"):
+    os.remove(f"./db/{userId}_{projectId}")
   temp_file = ""
   type = 'web'
 
-  print("preparing...")
+  print("preparing...", url)
 
-  if url in "youtube":
+  if "youtube" in url:
     type = "youtube"
-    loader = YoutubeLoader.from_youtube_url(url, add_video_info=False, language=[lang, "id"], translation=lang)
-  elif url in "wikipedia":
+    loader = YoutubeLoader.from_youtube_url(url, add_video_info=True) # , language=[lang, "id"], translation=lang
+    print(loader)
+  elif "wikipedia" in url :
     type = "wikipedia"
-    loader = WikipediaLoader(query="HUNTER X HUNTER", load_max_docs=2)
+    query = url.split("/wiki/")[1]
+    print("wiki test",query)
+    if "ko.wikipedia" in url:
+      query = parse.unquote(query, encoding="utf-8")
+      print("korean search", query)
+      loader = WikipediaLoader(query=query, lang="ko", load_max_docs=2)
+    else:
+      loader = WikipediaLoader(query=query, lang="en", load_max_docs=2)
   else: # 일반 웹으로 간주
+    print('general process')
     loader = WebBaseLoader(url)
 
-  print("loading...")
+  print("loading...", projectId)
   documents = loader.load_and_split()
 
-  print("splitting...")
+  print("splitting...",documents)
   chunks = text_splitter.split_documents(documents)
 
-  print("saving...")
+  print("saving...",chunks)
 
   vecs = Chroma.from_documents(chunks, embeddings, persist_directory=f"./db/{userId}_{projectId}")
 
+  print(documents)
   return { "result" : True, "data" : len(documents)}
 
 print("Loading Complete!")
