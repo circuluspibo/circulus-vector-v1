@@ -9,7 +9,9 @@ with open('config.json', 'r', encoding='utf-8') as file:
 print(data)
 
 type = data['type']
-url = data['url']
+video = data['video']
+image = data['image']
+voice = data['voice']
 
 def chat(message, history):
 
@@ -26,10 +28,12 @@ def chat(message, history):
     txt = txt + "\n" + line
     yield txt
 
+desc = f"""
+  <video width="512" height="512" controls poster="{image}" preload autoplay>
+    <source src="{video}" type="video/mp4">
+  </video>
+"""
 
-
-
-desc = f'<video width="512" height="512" controls src="{url}" autoplay></video>'
 # http://222.112.0.215:59522/v1/v/media/658aaf340833518cf6140dd8?type=mp4&length=158033
 
 demo = gr.ChatInterface(fn=chat, description=desc, fill_height=True)
