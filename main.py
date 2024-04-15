@@ -28,6 +28,10 @@ import zipfile
 import requests
 import json 
 from urllib import parse
+from huggingface_hub import upload_file
+from huggingface_hub import create_repo
+import json
+#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
 
 text_splitter = RecursiveCharacterTextSplitter(separators="\n", chunk_size=1024, chunk_overlap=128)
 
@@ -80,6 +84,39 @@ def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or me
   print(docs)
   return { "result" : True, "data" : docs }
 
+@app.get("/v1/share", summary="서비스 배포하기")
+def share(userId="test", name='david', gender='male', age='24', role='scientist', description='expert of AI robot', traits='politely', url='https://canvers.net/v1/v/media/658aaf340833518cf6140dd8?type=mp4&length=158033' ): #max=20480): # gen or med
+  
+  isExist = False
+
+  repo_id = f"newsac/{userId}_{name}_{age}_{role}"
+
+  try:
+    create_repo(repo_id, space_sdk="gradio", repo_type="space")
+  except:
+    isExist = True
+
+  print(isExist)
+
+  isExist = upload_file(
+    path_or_fileobj="app.py",
+    path_in_repo="app.py",
+    repo_id=repo_id,
+    repo_type="space"
+  )
+
+  upload_file(
+    path_or_fileobj=json.dumps({
+      'type': f"Your name is {name} who is {age} years old and {gender}. Your role is {role} for {description} and answer {traits} and like human.",
+      'url' : url,
+    }).encode('utf-8'),
+    path_in_repo="config.json",
+    repo_id=repo_id,
+    repo_type="space"
+  )
+
+  return { "result" : True, "data" : repo_id }
+
 @app.get("/v1/query", summary="언어모델과 연동 테스트")
 def search(prompt="", userId="test", projectId="test", type="매우 친절한 인공지능으로 모르면 모른다고 하고 아는건 최대한 자세히 말해주세요."): #max=20480): # gen or med
   vecs = Chroma(persist_directory=f"./db/{userId}_{projectId}", embedding_function=embeddings)
@@ -108,7 +145,6 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
   fo.write(file.file.read())
 
   temp_file = './uploads/' + file.filename
-
 
   print("preparing", temp_file)
 
