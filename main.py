@@ -31,7 +31,6 @@ from urllib import parse
 from huggingface_hub import upload_file
 from huggingface_hub import create_repo
 import json
-#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
 
 text_splitter = RecursiveCharacterTextSplitter(separators="\n", chunk_size=1024, chunk_overlap=128)
 
