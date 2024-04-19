@@ -84,11 +84,16 @@ def search(prompt="", userId="test", projectId="test"): #max=20480): # gen or me
   return { "result" : True, "data" : docs }
 
 @app.get("/v1/share", summary="서비스 배포하기")
-def share(userId="test", name='david', gender='male', age='24', role='scientist', description='expert of AI robot', traits='politely', image='', voice='', video='https://canvers.net/v1/v/media/658aaf340833518cf6140dd8?type=mp4&length=158033' ): #max=20480): # gen or med
+def share(userId="test", name='david', job='scientist', prompt='', faceId='', voiceId='', introId='https://canvers.net/v1/v/media/658aaf340833518cf6140dd8?type=mp4&length=158033' ): #max=20480): # gen or med
   
   isExist = False
 
-  repo_id = f"newsac/{userId}_{name}_{age}_{role}"
+  print(name)
+  print(job)
+
+  repo_id = f"newsac/{userId}_{introId}"
+
+  print(repo_id)
 
   try:
     create_repo(repo_id, space_sdk="gradio", repo_type="space")
@@ -106,10 +111,10 @@ def share(userId="test", name='david', gender='male', age='24', role='scientist'
 
   upload_file(
     path_or_fileobj=json.dumps({
-      'persona': f"Your name is {name} who is {age} years old and {gender}. Your role is {role} for {description} and answer {traits} and like human.",
-      'voice' : voice,
-      'image' : image,
-      'video' : video,
+      'prompt': prompt,
+      'voiceId' : voiceId,
+      'faceId' : faceId,
+      'introId' : introId,
     }).encode('utf-8'),
     path_in_repo="config.json",
     repo_id=repo_id,

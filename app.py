@@ -8,10 +8,10 @@ with open('config.json', 'r', encoding='utf-8') as file:
 
 print(data)
 
-type = data['type']
-video = data['video']
-image = data['image']
-voice = data['voice']
+type = data['prompt']
+introId = data['introId']
+faceId = data['faceId']
+voiceId = data['voiceId']
 
 def chat(message, history):
 
@@ -29,8 +29,8 @@ def chat(message, history):
     yield txt
 
 desc = f"""
-  <video width="512" height="512" controls poster="{image}" preload autoplay>
-    <source src="{video}" type="video/mp4">
+  <video width="512" height="512" controls poster="https://canvers.net/v1/v/media/{faceId}" preload autoplay>
+    <source src="https://canvers.net/v1/v/media/{introId}?type=mp4" type="video/mp4">
   </video>
 """
 
