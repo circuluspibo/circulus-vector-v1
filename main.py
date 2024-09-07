@@ -35,8 +35,8 @@ import json
 text_splitter = RecursiveCharacterTextSplitter(separators="\n", chunk_size=1024, chunk_overlap=128)
 
 embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", #"BAAI/bge-large-en-v1.5", #"BAAI/bge-m3", # # distiluse-base-multilingual-cased-v1
-    model_kwargs={"device": "cuda"}, # sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+    model_name="BAAI/bge-m3",# sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", #"BAAI/bge-large-en-v1.5", #"BAAI/bge-m3", # # distiluse-base-multilingual-cased-v1
+    model_kwargs={"device": "cpu"}, # sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
     encode_kwargs={"normalize_embeddings": True},
 )
 
