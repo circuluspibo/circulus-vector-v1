@@ -8,7 +8,7 @@ from transformers import AutoTokenizer,BartForConditionalGeneration
 from huggingface_hub import hf_hub_download
 from transformers import AutoTokenizer
 from huggingface_hub import snapshot_download
-import os
+import os, shutil
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
@@ -199,7 +199,7 @@ def fromFile(file : UploadFile = File(...), userId="test", projectId="test"):
 @app.get("/v1/fromUrl", summary="url로 부터 입력")
 def fromUrl(url="", userId="test", projectId="test", lang='ko'): #max=20480): # gen or med
   if os.path.exists(f"./db/{userId}_{projectId}"):
-    os.remove(f"./db/{userId}_{projectId}")
+    shutil.rmtree(f"./db/{userId}_{projectId}") #os.remove 
   temp_file = ""
   type = 'web'
 
